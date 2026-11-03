@@ -46,6 +46,5 @@ entry there to run that scenario again.
 
 - Symora has no API that creates people, so the human side of the example team
   is whoever runs this script.
-- The guest account that lets visitors browse without signing in is granted a
-  viewer membership separately, once guest sign-in is enabled on the
-  deployment.
+- Visitors never enter this Organization. They read the shared sessions'
+  links; everything else is shown through captures.

@@ -206,7 +206,7 @@ if (args["run-sessions"]) {
   console.log("· Sessions skipped (pass --run-sessions to run them; this spends model budget)");
 }
 
-console.log("\nDone. Grant the guest account a viewer membership once guest sign-in is enabled on this deployment.");
+console.log("\nDone.");
 
 // ---------------------------------------------------------------------------
 
