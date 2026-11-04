@@ -47,7 +47,8 @@ entry there to run that scenario again.
 - Symora has no API that creates people, so the human side of the example team
   is whoever runs this script.
 - The digest workflow's approver is addressed by email, so the person running
-  the script needs an email address. Local sign-in accounts have none: on a
-  local-login deployment the script stops at the Workflow.
+  the script needs an email address. Local sign-in accounts have none, so on a
+  local-login deployment set one on the local user first, or the script stops
+  at the Workflow.
 - Visitors never enter this Organization. They read the shared sessions'
   links; everything else is shown through captures.

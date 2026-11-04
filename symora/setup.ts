@@ -167,7 +167,8 @@ if (workflow.status !== "published") await api.post(`/agent/workflows/${workflow
 
 // Automation ---------------------------------------------------------------
 
-const automations = (await api.get<{ automations: Named[] }>(`/agent/automations?q=${encodeURIComponent(AUTOMATION.name)}`)).automations;
+// An empty list is served as null, as the web app also expects.
+const automations = (await api.get<{ automations: Named[] | null }>(`/agent/automations?q=${encodeURIComponent(AUTOMATION.name)}`)).automations ?? [];
 const automation = automations.find((candidate) => candidate.name === AUTOMATION.name);
 if (automation) {
   step("Automation", "exists", automation.id);
