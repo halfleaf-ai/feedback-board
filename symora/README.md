@@ -27,8 +27,8 @@ in to that deployment. The signed-in person becomes the Organization's owner
 and the approver in the digest workflow. Set `SYMORA_SESSION` to reuse a
 session instead.
 
-Running the script again only creates what is missing. Knowledge pages and
-Memory cards are synced from `content.ts`.
+Running the script again only creates what is missing; it never overwrites a
+resource that exists, so edits made in Symora are kept.
 
 ### Sessions
 
@@ -46,5 +46,8 @@ entry there to run that scenario again.
 
 - Symora has no API that creates people, so the human side of the example team
   is whoever runs this script.
+- The digest workflow's approver is addressed by email, so the person running
+  the script needs an email address. Local sign-in accounts have none: on a
+  local-login deployment the script stops at the Workflow.
 - Visitors never enter this Organization. They read the shared sessions'
   links; everything else is shown through captures.

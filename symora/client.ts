@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 export class SymoraError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string | undefined,
+    readonly code: number | undefined,
     message: string,
   ) {
     super(message);
@@ -34,9 +34,10 @@ export class Symora {
     const text = await response.text();
     const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
     if (!response.ok) {
-      const code = typeof payload.code === "string" ? payload.code : undefined;
+      const code = typeof payload.code === "number" ? payload.code : undefined;
       const message = typeof payload.error === "string" ? payload.error : text;
-      throw new SymoraError(response.status, code, `${method} ${path} → ${response.status} ${code ?? ""} ${message}`.trim());
+      const params = payload.params ? ` ${JSON.stringify(payload.params)}` : "";
+      throw new SymoraError(response.status, code, `${method} ${path} → ${response.status} ${code ?? ""} ${message}${params}`.trim());
     }
     return payload as T;
   }

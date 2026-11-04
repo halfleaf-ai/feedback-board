@@ -1,7 +1,8 @@
 /**
  * Builds the Symora example workspace for Feedback Board through Symora's
  * management APIs. Safe to run repeatedly: each resource is looked up by its
- * name, slug or idempotency key before it is created.
+ * name, slug or idempotency key before it is created, and nothing that exists
+ * is overwritten.
  *
  *   npx tsx symora/setup.ts --base https://symora.example.com/api [--run-sessions]
  *
@@ -32,7 +33,7 @@ const api = new Symora(base, process.env.SYMORA_SESSION ?? (await signIn(base)))
 const state: State = existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, "utf8")) : { sessions: {} };
 const saveState = () => writeFileSync(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`);
 
-const step = (label: string, outcome: "created" | "exists" | "updated", id: string) =>
+const step = (label: string, outcome: "created" | "exists" | "ensured", id: string) =>
   console.log(`${outcome === "exists" ? "·" : "+"} ${label} ${outcome} (${id})`);
 
 // Organization -------------------------------------------------------------
@@ -89,13 +90,20 @@ if (base_) {
   ).base;
   step("Knowledge base", "created", base_.id);
 }
-await api.post("/knowledge/push", {
-  kb_id: base_.id,
-  entries: KNOWLEDGE.pages.map((page) => ({ ...page, kind: "file" })),
-  commit_message: "Sync the Feedback Board handbook",
-  replace: false,
-});
-step(`Knowledge pages (${KNOWLEDGE.pages.length})`, "updated", base_.id);
+// Only missing pages are pushed: a page someone has edited is theirs.
+const present = new Set(
+  (await api.get<{ nodes: { path: string }[] }>(`/knowledge/tree?kb_id=${encodeURIComponent(base_.id)}`)).nodes.map((node) => node.path),
+);
+const missing = KNOWLEDGE.pages.filter((page) => !present.has(page.path));
+if (missing.length > 0) {
+  await api.post("/knowledge/push", {
+    kb_id: base_.id,
+    entries: missing.map((page) => ({ ...page, kind: "file" })),
+    commit_message: "Add the Feedback Board handbook",
+    replace: false,
+  });
+}
+step(`Knowledge pages (${missing.length} of ${KNOWLEDGE.pages.length} added)`, missing.length > 0 ? "created" : "exists", base_.id);
 
 // Memory -------------------------------------------------------------------
 
@@ -107,7 +115,7 @@ for (const card of MEMORY) {
     load_policy: "retrieved",
     idempotency_key: `example-workspace/${card.title}`,
   });
-  step(`Memory "${card.title}"`, "updated", created.card.id);
+  step(`Memory "${card.title}"`, "ensured", created.card.id);
 }
 
 // Project ------------------------------------------------------------------
@@ -121,7 +129,7 @@ const project = (
     idempotency_key: PROJECT.idempotencyKey,
   })
 ).project;
-step("Project", "updated", project.id);
+step("Project", "ensured", project.id);
 
 const repos = (await api.get<{ repos: Named[] }>(`/projecthub/projects/${project.id}/repos`)).repos;
 if (!repos.some((repo) => repo.name === REPO.name)) {
@@ -269,7 +277,7 @@ function digestWorkflow(approver: string) {
       type: node.type,
       name: node.name,
       prompt: node.prompt,
-      ...(node.assignee ? { assignee_user_id: node.assignee, router_options: human } : {}),
+      ...(node.type === "human" ? { assignee_user_id: node.assignee, router_options: human } : {}),
     })),
     edges: edges.map((edge) => ({
       id: edge.id,
